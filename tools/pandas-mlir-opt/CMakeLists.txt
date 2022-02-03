@@ -10,6 +10,8 @@ get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
 
 target_link_libraries(pandas-mlir-opt PRIVATE
   MLIROptLib
+  PandasMLIRInitAll
+  PandasMLIRArrowDialect
   ${dialect_libs}
   ${conversion_libs}
 )

@@ -1,0 +1,15 @@
+set(LLVM_TARGET_DEFINITIONS ArrowOps.td)
+mlir_tablegen(ArrowOps.h.inc -gen-op-decls)
+mlir_tablegen(ArrowOps.cpp.inc -gen-op-defs)
+mlir_tablegen(ArrowDialect.h.inc -gen-dialect-decls -dialect=arrow)
+mlir_tablegen(ArrowDialect.cpp.inc -gen-dialect-defs -dialect=arrow)
+add_public_tablegen_target(MLIRArrowOpsIncGen)
+add_dependencies(mlir-headers MLIRArrowOpsIncGen)
+
+set(LLVM_TARGET_DEFINITIONS ArrowTypes.td)
+mlir_tablegen(ArrowTypes.h.inc -gen-typedef-decls)
+mlir_tablegen(ArrowTypes.cpp.inc -gen-typedef-defs)
+add_public_tablegen_target(MLIRArrowTypesIncGen)
+
+add_mlir_doc(ArrowDialect ArrowDialect Arrow/ -gen-dialect-doc)
+add_mlir_doc(ArrowOps ArrowOps Arrow/ -gen-op-doc)

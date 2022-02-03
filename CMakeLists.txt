@@ -18,8 +18,15 @@ include_directories(${MLIR_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
+list(APPEND CMAKE_MODULE_PATH ${MLIR_MAIN_SRC_DIR}/cmake/modules)
+list(APPEND CMAKE_MODULE_PATH ${LLVM_MAIN_SRC_DIR}/cmake)
+set(MLIR_TABLEGEN_EXE mlir-tblgen)
+
+include(TableGen)
+include(AddLLVM)
+include(AddMLIR)
+
 add_subdirectory(include)
 add_subdirectory(lib)
 add_subdirectory(tools)
 add_subdirectory(test)
-

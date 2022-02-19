@@ -4,6 +4,14 @@ project(pandas-mlir LANGUAGES CXX C)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
+if(POLICY CMP0116)
+  cmake_policy(SET CMP0116 OLD)
+endif()
+
+# Include pybind11
+find_package(Python3 COMPONENTS Interpreter Development)
+add_subdirectory(external/pybind11)
+
 # In-tree build with LLVM_EXTERNAL_PROJECTS=pandas-mlir
 set(MLIR_MAIN_SRC_DIR ${LLVM_MAIN_SRC_DIR}/../mlir)
 set(MLIR_INCLUDE_DIR ${LLVM_MAIN_SRC_DIR}/../mlir/include)
@@ -28,5 +36,6 @@ include(AddMLIR)
 
 add_subdirectory(include)
 add_subdirectory(lib)
+add_subdirectory(python)
 add_subdirectory(tools)
 add_subdirectory(test)

@@ -16,10 +16,10 @@ cmake -GNinja -Bbuild \
 # Build pandas-mlir
 cmake --build build --target tools/pandas-mlir/all
 
-# Run unit tests
-cmake --build build --target check-pandas-mlir
-
 # Build everything
 cmake --build build
+
+# Convert Pandas Python -> Pandas MLIR
+cd python/test; pytest -s
 
 ```

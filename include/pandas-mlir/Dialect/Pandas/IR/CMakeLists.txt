@@ -1,0 +1,20 @@
+set(LLVM_TARGET_DEFINITIONS PandasOps.td)
+mlir_tablegen(PandasOps.h.inc -gen-op-decls)
+mlir_tablegen(PandasOps.cpp.inc -gen-op-defs)
+mlir_tablegen(PandasDialect.h.inc -gen-dialect-decls -dialect=pandas)
+mlir_tablegen(PandasDialect.cpp.inc -gen-dialect-defs -dialect=pandas)
+add_public_tablegen_target(MLIRPandasOpsIncGen)
+add_dependencies(mlir-headers MLIRPandasOpsIncGen)
+
+set(LLVM_TARGET_DEFINITIONS PandasTypes.td)
+mlir_tablegen(PandasTypes.h.inc -gen-typedef-decls)
+mlir_tablegen(PandasTypes.cpp.inc -gen-typedef-defs)
+add_public_tablegen_target(MLIRPandasTypesIncGen)
+
+set(LLVM_TARGET_DEFINITIONS PandasAttributes.td)
+mlir_tablegen(PandasAttributes.h.inc -gen-attrdef-decls)
+mlir_tablegen(PandasAttributes.cpp.inc -gen-attrdef-defs)
+add_public_tablegen_target(MLIRPandasAttributesIncGen)
+
+add_mlir_doc(PandasDialect PandasDialect Pandas/ -gen-dialect-doc)
+add_mlir_doc(PandasOps PandasOps Pandas/ -gen-op-doc)

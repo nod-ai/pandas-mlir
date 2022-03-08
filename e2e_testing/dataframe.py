@@ -1,13 +1,41 @@
 import pandas as pd
+import numpy as np
 import time
+import sys
+sys.path.append('../python')
+from pandas_exporter import export_pandas, annotate_pandas, PandasTypes, PandasSchema
 
+def test(df):
+    return df["a"]
+
+@export_pandas
+@annotate_pandas(
+    arg0 = {"type": "DataFrame",
+            "schema": {"a": "i32", "b": "i32"},
+            "dims": [3, 2]},
+    ret0 = {"type" : "Series",
+            "schema": {"0": "i32"},
+            "dims" : [3]},
+)
 def compute(df):
-    res = df[(df["a"] >= 2) & (df["b"].str.len() > 3)]
+    """
+    This test function demonstrates how pandas-mlir can export functions
+    when provided with complete information about the input.
+
+    Args:
+        df (pd.DataFrame): DataFrame with no nullable types and
+        fixed size.
+
+    Returns:
+        The "a" column.
+
+    """
+    res = df["a"]
     return res
 
-df = pd.DataFrame({"a": [1, 4, 9], "b": ["hello", "world", None]})
+df = pd.DataFrame({"a": [1, 4, 9], "b": [0, 3, 2]})
 
 startTime = time.time()
-compute(df)
+res = compute(df)
 endTime = time.time()
 print("Elapsed time (ms): " + str((endTime - startTime) * 1000))

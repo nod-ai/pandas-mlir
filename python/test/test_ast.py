@@ -3,11 +3,12 @@ import sys
 sys.path.append('../../build/lib')
 import ast
 import astunparse
-import python_ast_importer
+import pandas_mlir_converter
+from typing import Any
 
 class TestCase:
     def test_convert(self):
         with open('../../e2e_testing/dataframe.py', 'r') as f:
             input = f.read()
         tree = ast.parse(input)
-        python_ast_importer.import_ast(tree)
+        pandas_mlir_converter.convert_to_mlir(tree)

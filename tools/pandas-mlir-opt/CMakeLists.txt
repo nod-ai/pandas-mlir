@@ -12,6 +12,7 @@ target_link_libraries(pandas-mlir-opt PRIVATE
   MLIROptLib
   PandasMLIRInitAll
   PandasMLIRArrowDialect
+  PandasMLIRPandasDialect
   ${dialect_libs}
   ${conversion_libs}
 )

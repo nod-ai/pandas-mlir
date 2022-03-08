@@ -10,4 +10,5 @@ add_mlir_library(PandasMLIRInitAll
   MLIRIR
   MLIRSupport
   PandasMLIRArrowDialect
+  PandasMLIRPandasDialect
 )

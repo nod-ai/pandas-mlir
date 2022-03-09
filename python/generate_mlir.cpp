@@ -1,7 +1,7 @@
 #include <numeric>
 #include <iostream>
 #include "generate_mlir.h"
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 
 using namespace mlir;
 
@@ -65,6 +65,6 @@ mlir::LogicalResult MLIRGenerator::createReturnOp(const std::string_view &return
     return failure();
   }
   auto ret = symbolTable.lookup(returnName);
-  builder.create<ReturnOp>(moduleOp.getLoc(), ret);
+  builder.create<func::ReturnOp>(moduleOp.getLoc(), ret);
   return success();
 }

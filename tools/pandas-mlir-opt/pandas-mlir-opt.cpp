@@ -1,6 +1,6 @@
 #include "mlir/InitAllDialects.h"
 #include "mlir/InitAllPasses.h"
-#include "mlir/Support/MlirOptMain.h"
+#include "mlir/Tools/mlir-opt/MlirOptMain.h"
 #include "pandas-mlir/InitAll.h"
 
 using namespace mlir;

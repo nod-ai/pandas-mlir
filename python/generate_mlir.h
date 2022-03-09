@@ -13,7 +13,7 @@
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/IR/Verifier.h"
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/ScopedHashTable.h"
@@ -23,7 +23,7 @@ class MLIRGenerator {
 public:
   MLIRGenerator(mlir::MLIRContext &ctx) : builder(&ctx) {
     ctx.loadDialect<mlir::pandas::Pandas::PandasDialect,
-                    mlir::StandardOpsDialect>();
+                    mlir::func::FuncDialect>();
   }
   void init();
   mlir::LogicalResult createFuncOp(const std::string_view &name,

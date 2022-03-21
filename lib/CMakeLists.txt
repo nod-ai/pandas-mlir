@@ -1,3 +1,4 @@
+add_subdirectory(Conversion)
 add_subdirectory(Dialect)
 
 add_mlir_library(PandasMLIRInitAll

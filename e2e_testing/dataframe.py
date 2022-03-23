@@ -3,7 +3,7 @@ import numpy as np
 import time
 import sys
 sys.path.append('../python')
-from pandas_exporter import export_pandas, annotate_pandas, PandasTypes, PandasSchema
+from pandas_exporter import export_pandas, annotate_pandas
 
 def test(df):
     return df["a"]

@@ -112,60 +112,6 @@ void visit(py::handle root, MLIRGenerator &gen) {
   }
 }
 
-#if 0
-LogicalResult generate_mlir(py::handle node, MLIRGenerator &gen, locMap &symbolLocTable) {
-  if (getName(node) == "Assign") {
-    symbolLocTable[python::Location(node.attr("value"))] = node.attr("targets");
-  }
-  if (getName(node) == "Subscript") {
-    auto column = node.attr("slice").attr("value").cast<std::string_view>();
-    auto dataframe = node.attr("value").attr("id").cast<std::string_view>();
-    python::Location loc(node);
-    if (!symbolLocTable.count(loc)) {
-      return failure();
-    }
-    py::list results = symbolLocTable[loc];
-    std::vector<std::string_view> resultNames;
-    for (size_t i = 0; i < results.size(); i++) {
-      resultNames.push_back(results[i].attr("id").cast<std::string_view>());
-    }
-    if (failed(gen.createSliceOp(column, dataframe, resultNames)))
-      return failure();
-  }
-  if (getName(node) == "Return") {
-    py::handle returnValue = node.attr("value");
-    if (getName(returnValue) == "Name") {
-      auto returnName = returnValue.attr("id").cast<std::string_view>();
-      if (failed(gen.createReturnOp(returnName))) {
-        return failure();
-      }
-    }
-  }
-  return success();
-}
-
-void visit(py::handle obj, MLIRGenerator &gen, locMap &symbolLocTable) {
-  py::tuple fields = obj.attr("_fields");
-  for (py::handle field : fields) {
-    std::string f = field.cast<std::string>();
-    py::handle node = obj.attr(f.c_str());
-    if (py::isinstance<py::list>(node)) {
-      py::list nodeList = node.cast<py::list>();
-      for (py::handle subnode : node) {
-        if (isASTType(subnode)) {
-          if (failed(generate_mlir(subnode, gen)))
-            return;
-          visit(subnode, gen, symbolLocTable);
-        }
-      }
-    } else if (isASTType(node)) {
-      if (failed(generate_mlir(node, gen)))
-        return;
-      visit(node, gen, symbolLocTable);
-    }
-  }
-}
-#endif
 void parseSchema(py::handle schemaDict, Schema &schema) {
   py::list keys = schemaDict.attr("keys");
   py::list values = schemaDict.attr("values");
@@ -303,6 +249,6 @@ void convert_to_mlir(py::object ast) {
   auto funcName = exportedFunc.attr("name").cast<std::string_view>();
   if (failed(generator.createFuncOp(funcName, argTypes, retTypes, argNames))) return;
   visit(exportedFunc, generator);
-  generator.runPasses();
+  if (failed(generator.runPasses())) return;
   generator.dump();
 }

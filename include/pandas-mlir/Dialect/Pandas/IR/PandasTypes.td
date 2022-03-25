@@ -26,7 +26,6 @@ def Pandas_SeriesType: Pandas_Type<"Series", "series"> {
   }];
 }
 
-
 def Pandas_DataFrameType: Pandas_Type<"DataFrame", "dataframe"> {
   let summary = "Two-dimensional potentially heterogeneous tabular data";
   let description = [{
@@ -40,5 +39,16 @@ def Pandas_DataFrameType: Pandas_Type<"DataFrame", "dataframe"> {
     `<` $schema `>`
   }];
 }
+
+def Pandas_StringType: Pandas_Type<"String", "string"> {
+  let summary = "pandas.string";
+  let description = [{
+    String type.
+  }];
+}
+
+def AnyPandasType :
+    AnyTypeOf<[Pandas_DataFrameType, Pandas_SeriesType, AnyTensor,
+               AnyInteger, AnyFloat]>;
 
 #endif // PANDAS_TYPES

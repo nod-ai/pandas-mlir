@@ -1,5 +1,12 @@
 # pandas-mlir
 
+# Requirements
+
+Requires Python 3.9+. Install python requirements using pip.
+```
+pip install -r requirements.txt
+```
+
 # Build
 
 ```

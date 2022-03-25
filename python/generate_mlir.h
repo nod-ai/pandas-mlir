@@ -17,6 +17,7 @@
 
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/ScopedHashTable.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/raw_ostream.h"
 
 class MLIRGenerator {
@@ -30,10 +31,17 @@ public:
                     const llvm::SmallVectorImpl<mlir::Type> &argTypes,
                     const llvm::SmallVectorImpl<mlir::Type> &retTypes,
                     const llvm::SmallVectorImpl<llvm::StringRef> &argNames);
-  mlir::LogicalResult createSliceOp(const std::string_view &column,
-                                    const llvm::StringRef &dataframe,
-                                    const std::vector<std::string_view> &resultNames);
-  mlir::LogicalResult createReturnOp(const std::string_view &returnName);
+  llvm::Optional<mlir::Value> createSliceOp(mlir::Value dataframe, mlir::Value column,
+                                            const llvm::StringRef &dataframeVar);
+  llvm::Optional<mlir::Value> createBinOp(mlir::Value left, mlir::Value right,
+                                          const llvm::StringRef &type);
+  llvm::Optional<mlir::Value> createReturnOp(mlir::Value returnValue);
+  llvm::Optional<mlir::Value> createStringConstantOp(const llvm::StringRef &string);
+  llvm::Optional<mlir::Value> createIntConstantOp(const int &value);
+  llvm::Optional<mlir::Value> createFloatConstantOp(const float &value);
+  llvm::Optional<mlir::Value> lookup(const llvm::StringRef &var);
+  mlir::LogicalResult runPasses();
+  void addToSymbolTable(mlir::Value, const llvm::StringRef &var);
   void dump() {
     moduleOp.dump();
   }

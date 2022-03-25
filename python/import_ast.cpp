@@ -7,6 +7,8 @@
 #include "mlir/Support/LLVM.h"
 #include "llvm/ADT/SmallVector.h"
 #include <iostream>
+#include <deque>
+#include <string_view>
 
 static constexpr std::string_view PANDAS_EXPORT_ATTR = "export_pandas";
 static constexpr std::string_view PANDAS_ANNOTATE_ATTR = "annotate_pandas";
@@ -32,6 +34,85 @@ bool isASTType(py::handle node) {
   return moduleName == "ast";
 }
 
+Optional<Value> generate_mlir(py::handle node, MLIRGenerator &gen) {
+  if (getName(node) == "BinOp") {
+    auto left = generate_mlir(node.attr("left"), gen);
+    auto right = generate_mlir(node.attr("right"), gen);
+    if (!left || !right) return llvm::None;
+    auto type = getName(node.attr("op"));
+    return gen.createBinOp(*left, *right, type);
+  }
+  if (getName(node) == "Subscript") {
+    auto dataframe = generate_mlir(node.attr("value"), gen);
+    auto column = generate_mlir(node.attr("slice"), gen);
+    if (!dataframe || !column) return llvm::None;
+    assert (getName(node.attr("value")) == "Name");
+    return gen.createSliceOp(*dataframe, *column, node.attr("value").attr("id").cast<std::string_view>());
+  }
+  if (getName(node) == "Name") {
+    auto id = node.attr("id");
+    if (py::isinstance<py::str>(id)) {
+      return gen.lookup(id.cast<std::string_view>());
+    }
+  }
+  if (getName(node) == "Constant") {
+    py::handle value = node.attr("value");
+    if (py::isinstance<py::str>(value)) {
+      return gen.createStringConstantOp(value.cast<std::string_view>());
+    }
+    if (py::isinstance<py::int_>(value)) {
+      return gen.createIntConstantOp(value.cast<int>());
+    }
+    if (py::isinstance<py::float_>(value)) {
+      return gen.createFloatConstantOp(value.cast<float>());
+    }
+  }
+  if (getName(node) == "Assign") {
+    auto value = generate_mlir(node.attr("value"), gen);
+    py::list targets = node.attr("targets");
+    // TODO: Handle multiple targets
+    assert(targets.size() == 1);
+    if (value && (getName(targets[0]) == "Name")) {
+      auto var = targets[0].attr("id").cast<std::string_view>();
+      gen.addToSymbolTable(*value, var);
+    }
+    return value;
+  }
+  if (getName(node) == "Return") {
+    auto value = generate_mlir(node.attr("value"), gen);
+    if (!value) return llvm::None;
+    return gen.createReturnOp(*value);
+  }
+  return llvm::None;
+}
+
+void visit(py::handle root, MLIRGenerator &gen) {
+  std::deque<py::handle> todo;
+  todo.push_back(root);
+  py::handle obj = todo.front();
+  todo.pop_front();
+  py::tuple fields = obj.attr("_fields");
+  for (py::handle field : fields) {
+    std::string f = field.cast<std::string>();
+    py::handle node = obj.attr(f.c_str());
+    if (py::isinstance<py::list>(node)) {
+      py::list nodeList = node.cast<py::list>();
+      for (py::handle subnode : node) {
+        if (isASTType(subnode)) {
+          todo.push_back(subnode);
+        }
+      }
+    }
+  }
+  while (!todo.empty()) {
+    py::handle node = todo.front();
+    todo.pop_front();
+    if (!generate_mlir(node, gen))
+      continue;
+  }
+}
+
+#if 0
 LogicalResult generate_mlir(py::handle node, MLIRGenerator &gen, locMap &symbolLocTable) {
   if (getName(node) == "Assign") {
     symbolLocTable[python::Location(node.attr("value"))] = node.attr("targets");
@@ -72,19 +153,19 @@ void visit(py::handle obj, MLIRGenerator &gen, locMap &symbolLocTable) {
       py::list nodeList = node.cast<py::list>();
       for (py::handle subnode : node) {
         if (isASTType(subnode)) {
-          if (failed(generate_mlir(subnode, gen, symbolLocTable)))
+          if (failed(generate_mlir(subnode, gen)))
             return;
           visit(subnode, gen, symbolLocTable);
         }
       }
     } else if (isASTType(node)) {
-      if (failed(generate_mlir(node, gen, symbolLocTable)))
+      if (failed(generate_mlir(node, gen)))
         return;
       visit(node, gen, symbolLocTable);
     }
   }
 }
-
+#endif
 void parseSchema(py::handle schemaDict, Schema &schema) {
   py::list keys = schemaDict.attr("keys");
   py::list values = schemaDict.attr("values");
@@ -221,7 +302,7 @@ void convert_to_mlir(py::object ast) {
   // TODO: Depth first traversal of exported function
   auto funcName = exportedFunc.attr("name").cast<std::string_view>();
   if (failed(generator.createFuncOp(funcName, argTypes, retTypes, argNames))) return;
-  visit(exportedFunc, generator, symbolLocTable);
-  // TODO: MLIR conversion of AST
+  visit(exportedFunc, generator);
+  generator.runPasses();
   generator.dump();
 }

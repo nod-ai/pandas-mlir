@@ -24,4 +24,25 @@ def Pandas_SliceOp : Pandas_Op<"slice", [NoSideEffect]> {
     }];
 }
 
+def Pandas_StringConstantOp : Pandas_Op<"string.constant", [NoSideEffect]> {
+    let summary = "Create a string constant";
+    let description = [{}];
+    let arguments = (ins StrAttr:$value);
+    let results = (outs Pandas_StringType:$string);
+    let assemblyFormat = [{
+        attr-dict `:` qualified(type($string))
+    }];
+}
+
+def Pandas_BinaryOp : Pandas_Op<"binaryop", [NoSideEffect]> {
+    let summary = "Perform a binary operation between two values";
+    let description = [{}];
+    let arguments = (ins AnyPandasType:$left, AnyPandasType:$right,
+                         StrAttr:$type);
+    let results = (outs AnyPandasType:$res);
+    let assemblyFormat = [{
+        $left `,` $right attr-dict `:` `(` qualified(type($left)) `,` qualified(type($right)) `)` `->` qualified(type($res))
+    }];
+}
+
 #endif // PANDAS_OPS

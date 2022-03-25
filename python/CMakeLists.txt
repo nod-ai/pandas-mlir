@@ -10,5 +10,6 @@ pybind11_add_module(pandas_mlir_converter
 target_link_libraries(pandas_mlir_converter PRIVATE
   MLIRIR
   MLIRFunc
+  MLIRTransforms
   PandasMLIRPandasDialect
 )

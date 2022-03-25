@@ -27,11 +27,12 @@ def compute(df):
         fixed size.
 
     Returns:
-        The "a" column.
+        A linear combination of the "a" column and "b" column.
 
     """
-    res = df["a"]
-    return res
+    x = df["a"] * 2 + df["a"]
+    res = x + df["b"] * 3
+    return res + x
 
 df = pd.DataFrame({"a": [1, 4, 9], "b": [0, 3, 2]})
 

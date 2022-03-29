@@ -23,12 +23,10 @@ mlir::LogicalResult MLIRGenerator::declare(llvm::StringRef var, mlir::Value valu
   return success();
 }
 
-// TODO: Handle case where result types are inferred not provided
 mlir::LogicalResult MLIRGenerator::createFuncOp(const std::string_view &name,
                                  const llvm::SmallVectorImpl<mlir::Type> &argTypes,
-                                 const llvm::SmallVectorImpl<mlir::Type> &retTypes,
                                  const llvm::SmallVectorImpl<llvm::StringRef> &argNames) {
-  auto funcOp = FuncOp::create(moduleOp.getLoc(), name, builder.getFunctionType(argTypes, retTypes));
+  auto funcOp = FuncOp::create(moduleOp.getLoc(), name, builder.getFunctionType(argTypes, llvm::None));
   auto &entryBlock = *funcOp.addEntryBlock();
   for (size_t i = 0; i < argTypes.size(); i++) {
     if (failed(declare(argNames[i], entryBlock.getArgument(i))))
@@ -52,7 +50,8 @@ Optional<Value> MLIRGenerator::createSliceOp(Value dataframe, Value column,
 
   for (auto &pair : schemaDictAttr.getSchema()) {
     if (pair.first == columnVar) {
-      retType = pandas::Pandas::SeriesType::get(builder.getContext(), pair.second);
+      retType = pandas::Pandas::SeriesType::get(builder.getContext(), pair.second,
+                                                dfType.getIndices());
       break;
     }
   }
@@ -61,7 +60,14 @@ Optional<Value> MLIRGenerator::createSliceOp(Value dataframe, Value column,
   return result;
 }
 
+// When creating the return value, we do not know what the indices
+// of the return value are. Here since we know what it is, we update
+// the function signature with the current keys.
 Optional<Value> MLIRGenerator::createReturnOp(Value returnValue) {
+  moduleOp.walk([returnValue, this](FuncOp function) {
+    function.setType(builder.getFunctionType(function.getType().getInputs(),
+                                             returnValue.getType()));
+  });
   builder.create<func::ReturnOp>(moduleOp.getLoc(), returnValue);
   return llvm::None;
 }

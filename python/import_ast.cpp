@@ -127,6 +127,24 @@ void parseDims(py::list dimsList, SmallVectorImpl<int64_t> &dims) {
   }
 }
 
+void parseIndices(py::list indicesList, SmallVectorImpl<Attribute> &indices,
+                  MLIRGenerator &gen) {
+  for (size_t i = 0; i < indicesList.size(); i++) {
+    py::handle index = indicesList[i].attr("value");
+    if (py::isinstance<py::str>(index)) {
+      indices.push_back(StringAttr::get(gen.context(), index.cast<std::string_view>()));
+    }
+    if (py::isinstance<py::int_>(index)) {
+      indices.push_back(IntegerAttr::get(
+        IntegerType::get(gen.context(), 64), index.cast<int>()));
+    }
+    if (py::isinstance<py::float_>(index)) {
+      indices.push_back(FloatAttr::get(FloatType::getF32(gen.context()),
+                         index.cast<float>()));
+    }
+  }
+}
+
 Type getElementType(const std::string &type, MLIRGenerator &gen) {
   if (type == "i32") {
     return IntegerType::get(gen.context(), 32);
@@ -134,7 +152,9 @@ Type getElementType(const std::string &type, MLIRGenerator &gen) {
   return Type();
 }
 
-Type constructDataFrame(const Schema &schema, const SmallVectorImpl<int64_t> &dims, MLIRGenerator &gen) {
+Type constructDataFrame(const Schema &schema, const SmallVectorImpl<int64_t> &dims,
+                        const SmallVectorImpl<Attribute> &indices,
+                        MLIRGenerator &gen) {
   SmallVector<std::pair<std::string, Type>> schemaVec;
   for (size_t i = 0; i < schema.headers.size(); i++) {
     Type elType = getElementType(schema.types[i], gen);
@@ -146,10 +166,12 @@ Type constructDataFrame(const Schema &schema, const SmallVectorImpl<int64_t> &di
     }
   }
   auto schemaDictType = mlir::pandas::Pandas::SchemaDictAttr::get(gen.context(), schemaVec);
-  return mlir::pandas::Pandas::DataFrameType::get(gen.context(), schemaDictType);
+  return mlir::pandas::Pandas::DataFrameType::get(gen.context(), schemaDictType,
+                                        ArrayAttr::get(gen.context(), indices));
 }
 
 Type constructSeries(const Schema &schema, const SmallVectorImpl<int64_t> &dims,
+                     const SmallVectorImpl<Attribute> &indices,
                      MLIRGenerator &gen) {
   Type type;
   // TODO: Add error checking
@@ -157,29 +179,38 @@ Type constructSeries(const Schema &schema, const SmallVectorImpl<int64_t> &dims,
     Type elType = getElementType(schema.types[0], gen);
     type = RankedTensorType::get(dims, elType);
   }
-  return mlir::pandas::Pandas::SeriesType::get(gen.context(), type);
+  return mlir::pandas::Pandas::SeriesType::get(gen.context(), type,
+                                               ArrayAttr::get(gen.context(), indices));
 }
 
-void constructTypes(const std::string_view &type, const Schema &schema, const SmallVectorImpl<int64_t> &dims,
+void constructTypes(const std::string_view &type, const Schema &schema,
+                    const SmallVectorImpl<int64_t> &dims,
+                    const SmallVectorImpl<Attribute> &indices,
                     SmallVectorImpl<Type> &mlirTypes, MLIRGenerator &gen) {
   Type mlirType;
   if (type == "DataFrame") {
-    mlirType = constructDataFrame(schema, dims, gen);
+    mlirType = constructDataFrame(schema, dims, indices, gen);
   } else if (type == "Series") {
-    mlirType = constructSeries(schema, dims, gen);
+    mlirType = constructSeries(schema, dims, indices, gen);
   }
   mlirTypes.push_back(mlirType);
 }
 
+void populateIndices(SmallVectorImpl<Attribute> &indices,
+                     SmallVectorImpl<int64_t> &dims, MLIRGenerator &gen) {
+  for (int i = 0; i < dims[0]; i++) {
+    indices.push_back(IntegerAttr::get(IntegerType::get(gen.context(), 64), i));
+  }
+}
+
 void constructFuncTypes(py::handle decorator, SmallVectorImpl<Type> &argTypes,
-                        SmallVectorImpl<Type> &retTypes,
                         MLIRGenerator &gen) {
   py::list annotations = decorator.attr("keywords");
   for (size_t i = 0; i < annotations.size(); i++) {
     std::string_view type;
     SmallVector<int64_t> dims;
+    SmallVector<Attribute, 4> indices;
     Schema schema;
-    std::string_view arg = annotations[i].attr("arg").cast<std::string_view>();
     py::list keys = annotations[i].attr("value").attr("keys");
     py::list values = annotations[i].attr("value").attr("values");
     for (size_t j = 0; j < keys.size(); j++) {
@@ -190,15 +221,15 @@ void constructFuncTypes(py::handle decorator, SmallVectorImpl<Type> &argTypes,
         parseSchema(values[j], schema);
       } else if (v == "dims") {
         parseDims(values[j].attr("elts"), dims);
+      } else if (v == "indices") {
+        parseIndices(values[j].attr("elts"), indices, gen);
       }
     }
     // Extract "arg" or "ret" annotation
-    arg = arg.substr(0, 3);
-    if (arg == "arg") {
-      constructTypes(type, schema, dims, argTypes, gen);
-    } else if (arg == "ret") {
-      constructTypes(type, schema, dims, retTypes, gen);
+    if (indices.empty()) {
+      populateIndices(indices, dims, gen);
     }
+    constructTypes(type, schema, dims, indices, argTypes, gen);
   }
 }
 
@@ -227,7 +258,7 @@ void convert_to_mlir(py::object ast) {
         }
         if ((nodeType == "Call") &&
             (decorators[j].attr("func").attr("id").cast<std::string_view>() == PANDAS_ANNOTATE_ATTR)) {
-          constructFuncTypes(decorators[j], argTypes, retTypes, generator);
+          constructFuncTypes(decorators[j], argTypes, generator);
         }
       }
       // Get arg names
@@ -247,7 +278,7 @@ void convert_to_mlir(py::object ast) {
 
   // TODO: Depth first traversal of exported function
   auto funcName = exportedFunc.attr("name").cast<std::string_view>();
-  if (failed(generator.createFuncOp(funcName, argTypes, retTypes, argNames))) return;
+  if (failed(generator.createFuncOp(funcName, argTypes, argNames))) return;
   visit(exportedFunc, generator);
   if (failed(generator.runPasses())) return;
   generator.dump();

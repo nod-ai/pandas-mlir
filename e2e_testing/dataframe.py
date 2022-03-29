@@ -12,10 +12,8 @@ def test(df):
 @annotate_pandas(
     arg0 = {"type": "DataFrame",
             "schema": {"a": "i32", "b": "i32"},
+            "indices": ["key", 1, "hello"],
             "dims": [3, 2]},
-    ret0 = {"type" : "Series",
-            "schema": {"0": "i32"},
-            "dims" : [3]},
 )
 def compute(df):
     """

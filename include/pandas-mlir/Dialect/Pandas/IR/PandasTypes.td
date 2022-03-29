@@ -14,15 +14,15 @@ class Pandas_Type<string name, string typeMnemonic,
   let mnemonic = typeMnemonic;
 }
 
-// TODO: Add axis labels
 def Pandas_SeriesType: Pandas_Type<"Series", "series"> {
   let summary = "pandas.series";
   let description = [{
     One-dimensional ndarray with axis labels.
   }];
-  let parameters = (ins "::mlir::Type":$type);
+  let parameters = (ins "::mlir::Type":$type,
+                        "ArrayAttr":$indices);
   let assemblyFormat = [{
-    `<` $type `>`
+    `<` $type `,` `index` `:` $indices `>`
   }];
 }
 
@@ -34,9 +34,10 @@ def Pandas_DataFrameType: Pandas_Type<"DataFrame", "dataframe"> {
       We further impose a restriction that this type is immutable,
       thus imposing value semantics on any operator using this type.
   }];
-  let parameters = (ins "SchemaDictAttr":$schema);
+  let parameters = (ins "SchemaDictAttr":$schema,
+                        "ArrayAttr":$indices);
   let assemblyFormat = [{
-    `<` $schema `>`
+    `<` $schema `,` `index` `:` $indices `>`
   }];
 }
 

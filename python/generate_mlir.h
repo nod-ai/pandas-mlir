@@ -29,7 +29,6 @@ public:
   void init();
   mlir::LogicalResult createFuncOp(const std::string_view &name,
                     const llvm::SmallVectorImpl<mlir::Type> &argTypes,
-                    const llvm::SmallVectorImpl<mlir::Type> &retTypes,
                     const llvm::SmallVectorImpl<llvm::StringRef> &argNames);
   llvm::Optional<mlir::Value> createSliceOp(mlir::Value dataframe, mlir::Value column,
                                             const llvm::StringRef &dataframeVar);

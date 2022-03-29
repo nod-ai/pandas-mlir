@@ -6,8 +6,8 @@
 // CHECK:            return %[[V0]] : tensor<3xi32>
 #schema0 = #pandas.schema.dict<"a" : tensor<3xi32>, "b" : tensor<3xi32>>
 module {
-    func @compute(%arg0 : !pandas.dataframe<#schema0>) -> !pandas.series<tensor<3xi32>> {
-        %0 = pandas.slice %arg0, "a" : !pandas.dataframe<#schema0> -> !pandas.series<tensor<3xi32>>
-        return %0 : !pandas.series<tensor<3xi32>>
+    func @compute(%arg0 : !pandas.dataframe<#schema0, index : [0, 1, 2]>) -> !pandas.series<tensor<3xi32>, index : [0, 1, 2]> {
+        %0 = pandas.slice %arg0, "a" : !pandas.dataframe<#schema0, index : [0, 1, 2]> -> !pandas.series<tensor<3xi32>, index : [0, 1, 2]>
+        return %0 : !pandas.series<tensor<3xi32>, index : [0, 1, 2]>
     }
 }

@@ -14,8 +14,20 @@ class MyVisitor(ast.NodeVisitor):
         ast.NodeVisitor.generic_visit(self, node)
 
 class TestCase:
-    def test_convert(self):
-        with open('../../e2e_testing/dataframe.py', 'r') as f:
+
+
+    @pytest.mark.parametrize(
+        "py_ast_path",
+        [
+            '../../e2e_testing/dataframe.py',
+            pytest.param(
+                '../../e2e_testing/join.py',
+                marks=pytest.mark.xfail(reason='need error checking'),
+            ),
+        ]
+    )
+    def test_convert(self, py_ast_path):
+        with open(py_ast_path, 'r') as f:
             input = f.read()
         tree = ast.parse(input)
         #for node in ast.walk(tree):
@@ -25,4 +37,5 @@ class TestCase:
         #v = MyVisitor()
         #v.visit(tree)
         #breakpoint()
+        # TODO: Error checking so that conversion
         pandas_mlir_converter.convert_to_mlir(tree)

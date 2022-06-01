@@ -66,8 +66,6 @@ def test_join(t0, t1, compiler):
     # function category (e.g., `ScalarFunction`, `WindowFunction`, `IfThen`,
     # etc.).
     join_expr: Expression = join.expression
-
-    # A Join expression maps to a
     assert(join_expr.WhichOneof("rex_type") == "scalar_function")
     scalar_func = join_expr.scalar_function
 

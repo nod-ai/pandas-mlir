@@ -96,7 +96,8 @@ def test_join(t0, t1, compiler):
     sel0, sel1 = arg0.selection, arg1.selection
     sel0_col_id = sel0.direct_reference.struct_field.field
     sel1_col_id = sel1.direct_reference.struct_field.field
-    assert sel0_col_id == sel1_col_id, "Ordinal values should match!"
+    assert sel0_col_id
+    assert sel1_col_id
 
     # The left / right sides of the join equate to Table Scan operations
     #
